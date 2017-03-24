@@ -24,29 +24,40 @@ stdenv.mkDerivation {
   # TODO(akavel): below seems to have kinda similar result to `make B=something`, but I can't
   # put my finger on what's the exact difference, so that we could build straight into $out
   configurePhase = ''
-    # Simulate `make setup` but without interactve input
-    ## First, simulate `bin/setup.d/04-setup config`
-    mkdir -p obj
-    echo 'CONF_DO_AMD64=1' >> obj/.config
-    ## Now, simulate the rest of `make setup`
-    pwd
-    ./bin/setup.d/04-setup setup
+    # based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
+    #mkdir -C src/l4 check_build_tools
+    mkdir -p $out/l4
+    cp src/l4/mk/defconfig/config.amd64 $out/l4/.kconfig
+    make -C src/l4 O=$out/l4 olddefconfig
   '';
+  #configurePhase = ''
+  #  # Simulate `make setup` but without interactve input
+  #  ## First, simulate `bin/setup.d/04-setup config`
+  #  mkdir -p obj
+  #  echo 'CONF_DO_AMD64=1' >> obj/.config
+  #  ## Now, simulate the rest of `make setup`
+  #  pwd
+  #  ./bin/setup.d/04-setup setup
+  #'';
 
   # TODO(akavel): make sure we build for x86 / x64 / whatever we need
   # (should be configurable via Nix, with host arch autoconfigured by default on NixOS)
   # see: http://os.inf.tu-dresden.de/L4Re/build.html
   # TODO(akavel): try plugging in into generic buildPhase if possible
   buildPhase = ''
-    cd src/l4
-
-    # TODO(akavel): try to fix below to use `make B=something` and `make O=something` properly
-    make O=../../obj/l4/amd64
-
-    #make B=$out
-    #make O=$out config
-    #make O=$out
+    # TODO(akavel): what's V=0 for? do we need it or not?
+    make -C $out/l4 V=0
   '';
+  #buildPhase = ''
+  #  cd src/l4
+
+  #  # TODO(akavel): try to fix below to use `make B=something` and `make O=something` properly
+  #  make O=../../obj/l4/amd64
+
+  #  #make B=$out
+  #  #make O=$out config
+  #  #make O=$out
+  #'';
 #  builder = builtins.toFile "builder.sh" ''
 #    source $stdenv/setup
 #
