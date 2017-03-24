@@ -2,6 +2,8 @@
 with import <nixpkgs> {};  # standalone .nix
 
 # INFO: run with `nix-build $FILE.nix`
+# INFO: for easier debugging, `nix-build -K $FILE.nix` - this keeps failed results in /tmp/nix-...
+#  - see Nix manual 14.4.1
 
 stdenv.mkDerivation {
   name = "l4re-0.0.1";  # FIXME(akavel): fix version
@@ -33,17 +35,17 @@ stdenv.mkDerivation {
   # TODO(akavel): below seems to have kinda similar result to `make B=something`, but I can't
   # put my finger on what's the exact difference, so that we could build straight into $out
   configurePhase = ''
-    ## based on src/kernel/fiasco/Makefile's all:: rule, but changed from default arch to amd64
-    #make -C src/kernel/fiasco B=$out/kernel/fiasco
-    #cp src/kernel/fiasco/src/templates/globalconfig.out.amd64-1 $out/kernel/fiasco/globalconfig.out
-    ##echo 'CONFIG_AMD64=y' > $out/kernel/fiasco/globalconfig.out
-    #make -C src/kernel/fiasco O=$out/kernel/fiasco olddefconfig
+    # based on src/kernel/fiasco/Makefile's all:: rule, but changed from default arch to amd64
+    make -C src/kernel/fiasco B=$out/kernel/fiasco
+    cp src/kernel/fiasco/src/templates/globalconfig.out.amd64-1 $out/kernel/fiasco/globalconfig.out
+    #echo 'CONFIG_AMD64=y' > $out/kernel/fiasco/globalconfig.out  # TODO: above `cp` or just this?
+    make -C src/kernel/fiasco O=$out/kernel/fiasco olddefconfig
 
-    # based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
-    make -C src/l4 check_build_tools
-    mkdir -p $out/l4
-    cp src/l4/mk/defconfig/config.amd64 $out/l4/.kconfig
-    make -C src/l4 O=$out/l4 olddefconfig
+    ## based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
+    #make -C src/l4 check_build_tools
+    #mkdir -p $out/l4
+    #cp src/l4/mk/defconfig/config.amd64 $out/l4/.kconfig
+    #make -C src/l4 O=$out/l4 olddefconfig
   '';
   #configurePhase = ''
   #  # Simulate `make setup` but without interactve input
@@ -66,8 +68,8 @@ stdenv.mkDerivation {
   # TODO(akavel): try plugging in into generic buildPhase if possible
   buildPhase = ''
     # TODO(akavel): what's V=0 for? do we need it or not?
-    #make -C $out/kernel/fiasco V=0
-    make -C $out/l4
+    make -C $out/kernel/fiasco V=0
+    #make -C $out/l4
   '';
   #buildPhase = ''
   #  cd src/l4
@@ -93,6 +95,9 @@ stdenv.mkDerivation {
 #    make O=$out config
 #    make O=$out
 #  '';
+
+  #installPhase = "";
+  dontInstall = true;
 
   # FIXME(akavel): below apps may be just build dependencies, not runtime ones
   #inherit perl pkg_config tput which;
