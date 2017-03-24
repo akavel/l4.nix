@@ -38,6 +38,8 @@ stdenv.mkDerivation {
   buildPhase = ''
     cd src/l4
 
+    make O=../../obj/l4/amd64
+
     #make B=$out
     #make O=$out config
     #make O=$out
