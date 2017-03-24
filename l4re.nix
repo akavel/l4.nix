@@ -14,8 +14,12 @@ stdenv.mkDerivation {
 
   #patches = [ ./l4-fiasco-nopic.patch ];
 
-  # FIXME(akavel): initial workaround attempt/hack; nixkpgs #18895, #18995
-  hardeningDisable = [ "all" ];
+  # FIXME(akavel): initial workaround attempt/hack; nixkpgs #18895, #18995; fixes fiasco
+  # TODO(akavel): below line still breaks l4, but now only on bootstrap32.elf, with:
+  #  ld: skipping incompatible /nix/store/...-gcc-5.4.0/lib/gcc/x86_64-unknown-linux-gnu/5.4.0/libgcc.a when searching for -lgcc
+  #hardeningDisable = [ "all" ];
+  hardeningDisable = [ "stackprotector" "pic" ];
+  # TODO: maybe consider crossAttrs, as in pkgs/misc/uboot/default.nix ?
 
   postPatch = ''
     patchShebangs .
@@ -29,17 +33,17 @@ stdenv.mkDerivation {
   # TODO(akavel): below seems to have kinda similar result to `make B=something`, but I can't
   # put my finger on what's the exact difference, so that we could build straight into $out
   configurePhase = ''
-    # based on src/kernel/fiasco/Makefile's all:: rule, but changed from default arch to amd64
-    make -C src/kernel/fiasco B=$out/kernel/fiasco
-    cp src/kernel/fiasco/src/templates/globalconfig.out.amd64-1 $out/kernel/fiasco/globalconfig.out
-    #echo 'CONFIG_AMD64=y' > $out/kernel/fiasco/globalconfig.out
-    make -C src/kernel/fiasco O=$out/kernel/fiasco olddefconfig
+    ## based on src/kernel/fiasco/Makefile's all:: rule, but changed from default arch to amd64
+    #make -C src/kernel/fiasco B=$out/kernel/fiasco
+    #cp src/kernel/fiasco/src/templates/globalconfig.out.amd64-1 $out/kernel/fiasco/globalconfig.out
+    ##echo 'CONFIG_AMD64=y' > $out/kernel/fiasco/globalconfig.out
+    #make -C src/kernel/fiasco O=$out/kernel/fiasco olddefconfig
 
-    ## based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
-    #make -C src/l4 check_build_tools
-    #mkdir -p $out/l4
-    #cp src/l4/mk/defconfig/config.amd64 $out/l4/.kconfig
-    #make -C src/l4 O=$out/l4 olddefconfig
+    # based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
+    make -C src/l4 check_build_tools
+    mkdir -p $out/l4
+    cp src/l4/mk/defconfig/config.amd64 $out/l4/.kconfig
+    make -C src/l4 O=$out/l4 olddefconfig
   '';
   #configurePhase = ''
   #  # Simulate `make setup` but without interactve input
@@ -62,8 +66,8 @@ stdenv.mkDerivation {
   # TODO(akavel): try plugging in into generic buildPhase if possible
   buildPhase = ''
     # TODO(akavel): what's V=0 for? do we need it or not?
-    make -C $out/kernel/fiasco V=0
-    #make -C $out/l4
+    #make -C $out/kernel/fiasco V=0
+    make -C $out/l4
   '';
   #buildPhase = ''
   #  cd src/l4
@@ -97,5 +101,6 @@ stdenv.mkDerivation {
     perl pkgconfig which
     ncurses   # provides: tput
     #coreutils # pwd
+    gcc_multi
   ];
 }
