@@ -16,7 +16,19 @@ stdenv.mkDerivation {
     patchShebangs .
     echo "PWD: $coreutils/bin/pwd"
     which pwd
-    sed -i "s#/bin/pwd#$coreutils/bin/pwd#" src/l4/tool/kconfig/Makefile
+    sed -i "s#/bin/pwd#$coreutils/bin/pwd#" \
+      src/l4/tool/kconfig/Makefile \
+      src/kernel/fiasco/tool/kconfig/Makefile
+  '';
+
+  configurePhase = ''
+    # Simulate `make setup` but without interactve input
+    ## First, simulate `bin/setup.d/04-setup config`
+    mkdir -p obj
+    echo 'CONF_DO_AMD64=1' >> obj/.config
+    ## Now, simulate the rest of `make setup`
+    pwd
+    ./bin/setup.d/04-setup setup
   '';
 
   # TODO(akavel): make sure we build for x86 / x64 / whatever we need
@@ -25,13 +37,6 @@ stdenv.mkDerivation {
   # TODO(akavel): try plugging in into generic buildPhase if possible
   buildPhase = ''
     cd src/l4
-    
-    # Simulate `make setup` but without interactve input
-    ## First, simulate `bin/setup.d/04-setup config`
-    mkdir -p obj
-    echo 'CONF_DO_AMD64=1' >> obj/.config
-    ## Now, simulate the rest of `make setup`
-    bin/setup.d/04-setup setup
 
     #make B=$out
     #make O=$out config
