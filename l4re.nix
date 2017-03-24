@@ -21,6 +21,8 @@ stdenv.mkDerivation {
       src/kernel/fiasco/tool/kconfig/Makefile
   '';
 
+  # TODO(akavel): below seems to have kinda similar result to `make B=something`, but I can't
+  # put my finger on what's the exact difference, so that we could build straight into $out
   configurePhase = ''
     # Simulate `make setup` but without interactve input
     ## First, simulate `bin/setup.d/04-setup config`
@@ -38,6 +40,7 @@ stdenv.mkDerivation {
   buildPhase = ''
     cd src/l4
 
+    # TODO(akavel): try to fix below to use `make B=something` and `make O=something` properly
     make O=../../obj/l4/amd64
 
     #make B=$out
