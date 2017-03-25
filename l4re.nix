@@ -5,6 +5,9 @@ with import <nixpkgs> {};  # standalone .nix
 # INFO: for easier debugging, `nix-build -K $FILE.nix` - this keeps failed results in /tmp/nix-...
 #  - see Nix manual 14.4.1
 
+# TODO(akavel): try splitting below into src-only derivation + numerous binary derivations
+#  OR nicer generation of builds from SVN
+
 stdenv.mkDerivation {
   name = "l4re-core-2016082114";  # TODO(akavel): ok name or fix?
   src = fetchurl {
