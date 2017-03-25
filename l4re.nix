@@ -6,7 +6,7 @@ with import <nixpkgs> {};  # standalone .nix
 #  - see Nix manual 14.4.1
 
 stdenv.mkDerivation {
-  name = "l4re-0.0.1";  # FIXME(akavel): fix version
+  name = "l4re-core-2016082114";  # TODO(akavel): ok name or fix?
   src = fetchurl {
     # see: http://os.inf.tu-dresden.de/L4Re/download.html
     # FIXME(akavel): use SVN; snapshot may become stale
@@ -14,53 +14,33 @@ stdenv.mkDerivation {
     sha256 = "cd50e7f3c2c0bc7d62db23790f3ad856694defe5b2da8d95ca9f34a051937f88";
   };
 
-  #patches = [ ./l4-fiasco-nopic.patch ];
-
-  # FIXME(akavel): initial workaround attempt/hack; nixkpgs #18895, #18995; fixes fiasco
-  # TODO(akavel): below line still breaks l4, but now only on bootstrap32.elf, with:
-  #  ld: skipping incompatible /nix/store/...-gcc-5.4.0/lib/gcc/x86_64-unknown-linux-gnu/5.4.0/libgcc.a when searching for -lgcc
-  #hardeningDisable = [ "all" ];
+  # workaround based on info in nixkpgs issues #18895, #18995
   hardeningDisable = [ "stackprotector" "pic" ];
-  # TODO: maybe consider crossAttrs, as in pkgs/misc/uboot/default.nix ?
 
   postPatch = ''
     patchShebangs .
-    echo "PWD: $coreutils/bin/pwd"
-    which pwd
     sed -i "s#/bin/pwd#$coreutils/bin/pwd#" \
       src/l4/tool/kconfig/Makefile \
       src/kernel/fiasco/tool/kconfig/Makefile
   '';
 
-  # TODO(akavel): below seems to have kinda similar result to `make B=something`, but I can't
-  # put my finger on what's the exact difference, so that we could build straight into $out
+  outputs = ["out" "fiasco"];
+
   configurePhase = ''
+    # FIASCO
     # based on src/kernel/fiasco/Makefile's all:: rule, but changed from default arch to amd64
-    make -C src/kernel/fiasco B=$out/kernel/fiasco
-    cp src/kernel/fiasco/src/templates/globalconfig.out.amd64-1 $out/kernel/fiasco/globalconfig.out
-    #echo 'CONFIG_AMD64=y' > $out/kernel/fiasco/globalconfig.out  # TODO: above `cp` or just this?
-    make -C src/kernel/fiasco O=$out/kernel/fiasco olddefconfig
+    make -C src/kernel/fiasco B=$fiasco
+    cp src/kernel/fiasco/src/templates/globalconfig.out.amd64-1 $fiasco/globalconfig.out
+    #echo 'CONFIG_AMD64=y' > $fiasco/globalconfig.out  # TODO: above `cp` or just this?
+    make -C src/kernel/fiasco O=$fiasco olddefconfig
 
-    ## based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
-    #make -C src/l4 check_build_tools
-    #mkdir -p $out/l4
-    #cp src/l4/mk/defconfig/config.amd64 $out/l4/.kconfig
-    #make -C src/l4 O=$out/l4 olddefconfig
+    # L4RE
+    # based on src/l4/Makefile's all:: rule, but changed from default x86 to amd64
+    make -C src/l4 check_build_tools
+    mkdir -p $out
+    cp src/l4/mk/defconfig/config.amd64 $out/.kconfig
+    make -C src/l4 O=$out olddefconfig
   '';
-  #configurePhase = ''
-  #  # Simulate `make setup` but without interactve input
-  #  ## First, simulate `bin/setup.d/04-setup config`
-  #  mkdir -p obj
-  #  echo 'CONF_DO_AMD64=1' >> obj/.config
-  #  ## Now, simulate the rest of `make setup`
-  #  pwd
-  #  ./bin/setup.d/04-setup setup
-  #'';
-
-  # FIXME(akavel): is below not too much for fixing below error:
-  #  undefined reference to `__stack_chk_fail'
-  # FIXME(akavel): what does below flag really do?
-  #NIX_CFLAGS_COMPILE = "-fno-stack-protector";
 
   # TODO(akavel): make sure we build for x86 / x64 / whatever we need
   # (should be configurable via Nix, with host arch autoconfigured by default on NixOS)
@@ -68,40 +48,15 @@ stdenv.mkDerivation {
   # TODO(akavel): try plugging in into generic buildPhase if possible
   buildPhase = ''
     # TODO(akavel): what's V=0 for? do we need it or not?
-    make -C $out/kernel/fiasco V=0
-    #make -C $out/l4
+    #make -C $fiasco V=0
+    make -C $fiasco
+    make -C $out
   '';
-  #buildPhase = ''
-  #  cd src/l4
 
-  #  # TODO(akavel): try to fix below to use `make B=something` and `make O=something` properly
-  #  make O=../../obj/l4/amd64
-
-  #  #make B=$out
-  #  #make O=$out config
-  #  #make O=$out
-  #'';
-#  builder = builtins.toFile "builder.sh" ''
-#    source $stdenv/setup
-#
-#    PATH=$perl/bin:$pkg_config/bin:$tput/bin:$which/bin:$PATH
-#    which perl
-#    which pkg-config
-#    which tput
-#
-#    tar xJf $src
-#    cd l4re-core-*/src/l4
-#    make B=$out
-#    make O=$out config
-#    make O=$out
-#  '';
-
-  #installPhase = "";
   dontInstall = true;
 
-  # FIXME(akavel): below apps may be just build dependencies, not runtime ones
-  #inherit perl pkg_config tput which;
-  inherit coreutils;  # why $coreutils is not available when listing them just in buildInputs?
+  # FIXME(akavel): why $coreutils is not available when listing them just in buildInputs?
+  inherit coreutils;
   buildInputs = [
     perl pkgconfig which
     ncurses   # provides: tput
