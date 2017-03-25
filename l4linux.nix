@@ -14,7 +14,12 @@ let
   # from `with import <nixpkgs> {};`
   nixpkgs = path;
 
-  # kernelFn corresponds to a pkgs/os-specific/linux/kernel/linux-X.Y.nix file
+  overrideDerivation = pkgs.stdenv.lib.overrideDerivation;
+  #buildLinux0 = pkgs.callPackage "${nixpkgs}/pkgs/os-specific/linux/kernel/manual-config.nix" {};
+  #buildLinuxOverride = args: overrideDerivation (buildLinux0 args)
+  overrideFunctor = functor: overridesFn:
+    (args: overrideDerivation (functor args) overridesFn);
+
   kernel = 
     #(import <nixpkgs>/pkgs/os-specific/linux/kernel/generic.nix) (rec {
     #pkgs.callPackage $nixpkgs/pkgs/os-specific/linux/kernel/generic.nix (rec {
@@ -27,14 +32,22 @@ let
         url = http://os.inf.tu-dresden.de/download/snapshots/l4re-snapshot-2016082114.tar.xz;
         sha256 = "d6272a6b07f73d29598b45a82e2dbb44bdac2d5ffcc3e6becd51db669b196c69";
       };
-      unpackCmd = "ln -s $src/*/src/l4linux ./l4linux";
       kernelPatches = [];
-      postPatch = ''
-        patchShebangs .
-        sed -i "s#/bin/pwd#$coreutils/bin/pwd#" \
-          $(grep -r -l /bin/pwd .)
-      '';
+      #postPatch = ''
+      #  patchShebangs .
+      #  sed -i "s#/bin/pwd#$coreutils/bin/pwd#" \
+      #    $(grep -r -l /bin/pwd .)
+      #'';
+      #buildLinux = overrideDerivation pkgs.buildLinux (oldAttrs: {
+      #buildLinux = pkgs.buildLinux.overrideDerivation (oldAttrs: {
+      #buildLinux = overrideDerivation buildLinux0 (oldAttrs: {
+      buildLinux = overrideFunctor pkgs.buildLinux (oldAttrs: {
+        postUnpack = "sourceRoot=$sourceRoot/src/l4linux; echo MCDBG $sourceRoot";
+      });
     });
+  #kernel = overrideDerivation kernelRaw (oldArgs : {
+  #  postUnpack = "sourceRoot=$sourceRoot/src/l4linux; echo MCDBG $sourceRoot";
+  #});
 
   ## workaround based on info in nixkpgs issues #18895, #18995
   #hardeningDisable = [ "stackprotector" "pic" ];
