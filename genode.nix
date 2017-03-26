@@ -13,6 +13,10 @@ let
       url = mirror://sourceforge/genode/genode-toolchain/16.05/genode-toolchain-16.05-x86_64.tar.bz2;
       sha256 = "07k41p2ssr6vq793g766y5ng14ljx9x5d5qy2zvjkq7csqr9hr1j";
     };
+    # NOTE(akavel): patchelf based on http://sandervanderburg.blogspot.com/2015/10/deploying-prebuilt-binary-software-with.html and grepping patchelf in nixpkgs
+    #  and initially through http://unix.stackexchnage.com/a/91578/11352
+    # TODO(akavel): isn't below patchelf expected to run automatically in fixupPhase?
+    # TODO(akavel): do we also need to patchelf more binaries in this package?
     builder = builtins.toFile "builder.sh" ''
       source $stdenv/setup
 
@@ -22,6 +26,10 @@ let
 
       echo fixup...
       fixupPhase
+
+      for f in $out/genode-*; do
+        patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) $f
+      done
     '';
   };
 
