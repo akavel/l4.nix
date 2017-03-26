@@ -7,6 +7,7 @@ with import <nixpkgs> {};  # standalone .nix
 
 let
   # TODO(akavel): add option to build from source instead
+  # TODO(akavel): should we use stdenv.wrapCC or something to wrap the unpacked gcc compilers?
   genode-toolchain-bin = stdenv.mkDerivation {
     name = "genode-toolchain-16.05-x86_64-bin";
     src = fetchurl {
@@ -61,10 +62,11 @@ let
     '';
     buildPhase = ''
       cd $out
-      make
+      CFLAGS="$NIX_CFLAGS_COMPILE" make
     '';
     buildInputs = [
       genode-toolchain-bin which
+      linuxHeaders
     ];
   };
 in
