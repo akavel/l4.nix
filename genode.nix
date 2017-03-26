@@ -7,7 +7,7 @@ with import <nixpkgs> {};  # standalone .nix
 
 let
   # TODO(akavel): add option to build from source instead
-  genode-toolchain-bin = stdenv.mkDerivation rec {
+  genode-toolchain-bin = stdenv.mkDerivation {
     name = "genode-toolchain-16.05-x86_64-bin";
     src = fetchurl {
       url = mirror://sourceforge/genode/genode-toolchain/16.05/genode-toolchain-16.05-x86_64.tar.bz2;
@@ -24,5 +24,28 @@ let
       fixupPhase
     '';
   };
+
+  genode = stdenv.mkDerivation {
+    name = "genode-17.02";
+    src = fetchFromGitHub {
+      owner = "genodelabs";
+      repo = "genode";
+      rev = "17.02";
+      sha256 = "1mhik38bcixqnr658diwspic5xx65z3gxlyqwq52ncx1vmi0i7v5";
+    };
+    postPatch = ''
+      patchShebangs .
+    '';
+    configurePhase = ''
+      tool/create_builddir linux BUILD_DIR=$out
+    '';
+    buildPhase = ''
+      cd $out
+      make
+    '';
+    buildInputs = [
+      genode-toolchain-bin which
+    ];
+  };
 in
-  genode-toolchain-bin
+  { toolchain = genode-toolchain-bin; genode = genode; }
