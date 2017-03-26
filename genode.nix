@@ -6,6 +6,9 @@ with import <nixpkgs> {};  # standalone .nix
 #  - see Nix manual 14.4.1
 
 let
+  # from `with import <nixpkgs> {};`
+  nixpkgs = path;
+
   # TODO(akavel): add option to build from source instead
   # TODO(akavel): should we use stdenv.wrapCC or something to wrap the unpacked gcc compilers?
   genode-toolchain-bin = stdenv.mkDerivation {
@@ -41,6 +44,13 @@ let
     '';
   };
 
+  ## TODO(akavel): doesn't work
+  #cc-wrapper = "${nixpkgs}/pkgs/build-support/cc-wrapper/cc-wrapper.sh";
+  #ccWrapperFun = callPackage "${nixpkgs}/pkgs/build-support/cc-wrapper";
+  #genode-toolchain-wrap = wrapCCWith ccWrapperFun stdenv.cc.libc ''
+  #  wrap genode-x86-g++ ${cc-wrapper} $ccPath/genode-x86-g++
+  #'' genode-toolchain-bin;
+
   genode = stdenv.mkDerivation {
     name = "genode-17.02";
     src = fetchFromGitHub {
@@ -62,12 +72,15 @@ let
     '';
     buildPhase = ''
       cd $out
-      CFLAGS="$NIX_CFLAGS_COMPILE" make
+      make CFLAGS="$NIX_CFLAGS_COMPILE"
     '';
     buildInputs = [
       genode-toolchain-bin which
       linuxHeaders
     ];
   };
-in
-  { toolchain = genode-toolchain-bin; genode = genode; }
+in {
+  toolchain = genode-toolchain-bin;
+  genode = genode;
+  #wrap = genode-toolchain-wrap;
+}
