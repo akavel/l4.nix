@@ -22,13 +22,15 @@ let
 
       echo unpacking...
       mkdir -p $out
-      tar -C $out -xf $src /usr/local/genode-gcc --strip-components=4
+      tar -C $out -xf $src /usr/local/genode-gcc --strip-components=3
 
       echo fixup...
       fixupPhase
 
-      for f in $out/genode-*; do
-        patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) $f
+      for f in $(find $out -type f -executable); do
+      #for f in $out/genode-*; do
+        patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) $f ||
+          echo "$f: patchelf failed, skipping"
       done
     '';
   };
@@ -43,14 +45,14 @@ let
     };
     postPatch = ''
       patchShebangs .
-      #sed -i "s#/usr/local/genode-gcc/bin#${genode-toolchain-bin}#" \
+      #sed -i "s#/usr/local/genode-gcc#${genode-toolchain-bin}#" \
       #  tool/create_uboot \
       #  repos/base/etc/tools.conf
     '';
     configurePhase = ''
       tool/create_builddir linux BUILD_DIR=$out
       mkdir -p $out/etc
-      echo "CROSS_DEV_PREFIX = ${genode-toolchain-bin}/genode-x86-" > $out/etc/tools.conf
+      echo "CROSS_DEV_PREFIX = ${genode-toolchain-bin}/bin/genode-x86-" > $out/etc/tools.conf
     '';
     buildPhase = ''
       cd $out
