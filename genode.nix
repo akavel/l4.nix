@@ -35,9 +35,14 @@ let
     };
     postPatch = ''
       patchShebangs .
+      #sed -i "s#/usr/local/genode-gcc/bin#${genode-toolchain-bin}#" \
+      #  tool/create_uboot \
+      #  repos/base/etc/tools.conf
     '';
     configurePhase = ''
       tool/create_builddir linux BUILD_DIR=$out
+      mkdir -p $out/etc
+      echo "CROSS_DEV_PREFIX = ${genode-toolchain-bin}/genode-x86-" > $out/etc/tools.conf
     '';
     buildPhase = ''
       cd $out
