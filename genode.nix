@@ -26,11 +26,16 @@ let
 
       echo fixup...
       fixupPhase
-
+    '';
+    # NOTE(akavel): couldn't use makeLibraryPath in toFile because of error:
+    #  "in 'toFile': the file 'builder.sh' cannot refer to derivation outputs"
+    postFixup = ''
       for f in $(find $out -type f -executable); do
-      #for f in $out/genode-*; do
-        patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) $f ||
-          echo "$f: patchelf failed, skipping"
+        patchelf \
+          --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
+          --set-rpath ${stdenv.lib.makeLibraryPath [ zlib ]} \
+          $f \
+          || echo "$f: patchelf failed, skipping"
       done
     '';
   };
