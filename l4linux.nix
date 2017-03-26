@@ -25,12 +25,8 @@ let
     builder = builtins.toFile "builder.sh" ''
       source $stdenv/setup
       mkdir -p $out
-      echo UNPACKING
+      echo unpacking...
       tar -C $out -xf $src l4re-snapshot-2016082114/src/l4linux --strip-components=3
-      #tar xf $src
-      #mkdir -p $out
-      #echo MOVING
-      #mv l4re-snapshot-*/src/l4linux $out/l4linux
     '';
   };
 
@@ -45,7 +41,8 @@ let
     #pkgs.callPackage $nixpkgs/pkgs/os-specific/linux/kernel/generic.nix (rec {
     #(import "${nixpkgs}/pkgs/os-specific/linux/kernel/generic.nix") (rec {
     pkgs.callPackage "${nixpkgs}/pkgs/os-specific/linux/kernel/generic.nix" (rec {
-      version = "4.7";  # TODO(akavel): ok or not?
+      version = "4.7.0-l4-2016082114";  # TODO(akavel): ok or not?
+      modDirVersion = "4.7.0-l4";  # see: nixpkgs issue #17801 and linux-mptcp.nix
       src = l4re;
       #src = fetchurl {
       #  # see: http://os.inf.tu-dresden.de/L4Re/download.html
