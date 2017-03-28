@@ -41,7 +41,15 @@ let
           $f \
           || echo "$f: patchelf failed, skipping"
       done
+
+      # TODO(akavel): or should we run this before fixupPhase?
+      # TODO(akavel): wrap also other executables? esp. gcc/g++/... ones?
+      for prog in x86-g++ x86-gcc; do
+        wrapProgram $out/bin/genode-$prog \
+          --add-flags \$NIX_CFLAGS_COMPILE
+      done
     '';
+    buildInputs = [ makeWrapper ];
   };
 
   ## TODO(akavel): doesn't work
@@ -72,11 +80,12 @@ let
     '';
     buildPhase = ''
       cd $out
-      make CFLAGS="$NIX_CFLAGS_COMPILE"
+      make
     '';
     buildInputs = [
       genode-toolchain-bin which
-      linuxHeaders
+      # Libs. TODO(akavel): find out which are needed for which apps
+      linuxHeaders glibc alsaLib.dev
     ];
   };
 in {
