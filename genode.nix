@@ -46,7 +46,11 @@ let
       # TODO(akavel): wrap also other executables? esp. gcc/g++/... ones?
       for prog in x86-g++ x86-gcc; do
         wrapProgram $out/bin/genode-$prog \
-          --add-flags \$NIX_CFLAGS_COMPILE
+          --add-flags '$NIX_CFLAGS_COMPILE $NIX_LDFLAGS'
+      done
+      for prog in x86-ld; do
+        wrapProgram $out/bin/genode-$prog \
+          --add-flags '$NIX_LDFLAGS'
       done
     '';
     buildInputs = [ makeWrapper ];
