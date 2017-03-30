@@ -46,7 +46,9 @@ let
       # TODO(akavel): wrap also other executables? esp. gcc/g++/... ones?
       for prog in x86-g++ x86-gcc; do
         wrapProgram $out/bin/genode-$prog \
-          --add-flags '$NIX_CFLAGS_COMPILE $NIX_LDFLAGS'
+          --run 'NIX_LDFLAGS=''${NIX_LDFLAGS//  / }' \
+          --run 'NIX_LDFLAGS=''${NIX_LDFLAGS//  / }' \
+          --add-flags '$NIX_CFLAGS_COMPILE ''${NIX_LDFLAGS:+-Wl,}''${NIX_LDFLAGS// /,}'
       done
       for prog in x86-ld; do
         wrapProgram $out/bin/genode-$prog \
@@ -87,9 +89,9 @@ let
       make
     '';
     buildInputs = [
-      genode-toolchain-bin which
+      genode-toolchain-bin which pkgconfig
       # Libs. TODO(akavel): find out which are needed for which apps
-      linuxHeaders glibc alsaLib.dev
+      linuxHeaders glibc alsaLib.dev SDL
     ];
   };
 in {
