@@ -30,61 +30,13 @@ let
     '';
   };
 
-  #overrideDerivation = pkgs.stdenv.lib.overrideDerivation;
-  ##buildLinux0 = pkgs.callPackage "${nixpkgs}/pkgs/os-specific/linux/kernel/manual-config.nix" {};
-  ##buildLinuxOverride = args: overrideDerivation (buildLinux0 args)
-  #overrideFunctor = functor: overridesFn:
-  #  (args: overrideDerivation (functor args) overridesFn);
-
   kernel = 
-    #(import <nixpkgs>/pkgs/os-specific/linux/kernel/generic.nix) (rec {
-    #pkgs.callPackage $nixpkgs/pkgs/os-specific/linux/kernel/generic.nix (rec {
-    #(import "${nixpkgs}/pkgs/os-specific/linux/kernel/generic.nix") (rec {
     pkgs.callPackage "${nixpkgs}/pkgs/os-specific/linux/kernel/generic.nix" (rec {
       version = "4.7.0-l4-2016082114";  # TODO(akavel): ok or not?
       modDirVersion = "4.7.0-l4";  # see: nixpkgs issue #17801 and linux-mptcp.nix
       src = l4re;
-      #src = fetchurl {
-      #  # see: http://os.inf.tu-dresden.de/L4Re/download.html
-      #  # FIXME(akavel): use SVN; snapshot may become stale
-      #  url = http://os.inf.tu-dresden.de/download/snapshots/l4re-snapshot-2016082114.tar.xz;
-      #  sha256 = "d6272a6b07f73d29598b45a82e2dbb44bdac2d5ffcc3e6becd51db669b196c69";
-      #};
       kernelPatches = [];
-      #postPatch = ''
-      #  patchShebangs .
-      #  sed -i "s#/bin/pwd#$coreutils/bin/pwd#" \
-      #    $(grep -r -l /bin/pwd .)
-      #'';
-      #buildLinux = overrideDerivation pkgs.buildLinux (oldAttrs: {
-      #buildLinux = pkgs.buildLinux.overrideDerivation (oldAttrs: {
-      #buildLinux = overrideDerivation buildLinux0 (oldAttrs: {
-      #buildLinux = overrideFunctor pkgs.buildLinux (oldAttrs: {
-      #  postUnpack = "sourceRoot=$sourceRoot/src/l4linux; echo MCDBG $sourceRoot";
-      #});
     });
-  #kernel = overrideDerivation kernelRaw (oldArgs : {
-  #  postUnpack = "sourceRoot=$sourceRoot/src/l4linux; echo MCDBG $sourceRoot";
-  #});
-
-  ## workaround based on info in nixkpgs issues #18895, #18995
-  #hardeningDisable = [ "stackprotector" "pic" ];
-
-  # TODO: L4_OBJ_TREE=$out/obj/
-  # TODO: (L4_ARCH_X86)
-  # TODO: (L4_DEBUG)
-  # TODO: 64BIT=y
-
-
-  ## FIXME(akavel): why $coreutils is not available when listing them just in buildInputs?
-  #inherit coreutils;
-  #buildInputs = [
-  #  perl pkgconfig which
-  #  ncurses   # provides: tput
-  #  #coreutils # pwd
-  #  gcc_multi
-  #];
 in
   kernel
-#  { l4re = l4re; l4linux = kernel; }
 
