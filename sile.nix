@@ -9,6 +9,12 @@ let
       rev = "0cb0c20a3ba40057e6902551300630";
       sha256 = "07xy0mv7xladqynsbh6vadzwxcfkr1q0vajjg3j7gaazainxn0cw";
     };
+    preConfigure = ''ln -s . libtexpdf'';
+    autoreconfFlags = "-I m4 --verbose";
+    buildInputs = [
+      autoreconfHook pkgconfig
+      libpng
+    ];
   };
 
   sile = stdenv.mkDerivation {
