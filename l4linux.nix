@@ -1,5 +1,34 @@
 #{ stdenv, fetchurl }:      # nixpkgs .nix
-with import <nixpkgs> {};  # standalone .nix
+#with import <nixpkgs> {};  # standalone .nix
+with import <nixpkgs> {
+  # Based on https://nixos.org/wiki/CrossCompiling + a bit of https://nixos.org/nixpkgs/manual
+  crossSystem = {
+    # FIXME: which of below attrs we really need?
+    # FIXME: which of below attrs triggers cross-compilation? (appearance of .crossDrv in derivation)
+    config = "l4-unknown-linux";
+    arch = "x86_64";
+    libc = "glibc";
+    gcc = {
+      arch = "x86_64";
+    };
+    platform = {
+      kernelArch = "l4";
+      kernelMajor = "2.6"; # Seems to be magic number required for cross-compiling for Linux 2.6+
+                           # See also: https://sourceware.org/ml/crossgcc/2005-12/msg00116.html
+      # FIXME: from pkgs/top-level/platforms.nix pcBase
+      name = "pc";
+      uboot = null;
+      kernelHeadersBaseConfig = "defconfig";
+      kernelBaseConfig = "defconfig";
+      # Build whatever possible as a module, if not stated in the extra config.
+      kernelAutoModules = true;
+      kernelTarget = "bzImage";
+    };
+    # FIXME: are below values ok? and do we really require them?
+    withTLS = true;
+    openssl.system = "linux-generic32";
+  };
+};
 
 # INFO: run with `nix-build $FILE.nix`
 # INFO: for easier debugging, `nix-build -K $FILE.nix` - this keeps failed results in /tmp/nix-...
@@ -31,12 +60,14 @@ let
   };
 
   kernel = 
-    pkgs.callPackage "${nixpkgs}/pkgs/os-specific/linux/kernel/generic.nix" (rec {
+    pkgs.callPackage ./kernel-generic-fixed.nix (rec {
+      inherit nixpkgs;
       version = "4.7.0-l4-2016082114";  # TODO(akavel): ok or not?
       modDirVersion = "4.7.0-l4";  # see: nixpkgs issue #17801 and linux-mptcp.nix
       src = l4re;
       kernelPatches = [];
     });
 in
+  # NOTE(akavel): removed .crossDrv per https://github.com/NixOS/nixpkgs/issues/24388
   kernel
 
