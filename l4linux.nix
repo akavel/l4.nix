@@ -2,14 +2,15 @@
 #with import <nixpkgs> {};  # standalone .nix
 with import <nixpkgs> {
   # Based on https://nixos.org/wiki/CrossCompiling + a bit of https://nixos.org/nixpkgs/manual
+  # TODO(akavel): maybe try somehow just all-packages.nix's `forceSystem` ?
   crossSystem = {
+    config = "x86_64-linux";  # NOTE: based on `builtins.currentSystem`
     # FIXME: which of below attrs we really need?
-    # FIXME: which of below attrs triggers cross-compilation? (appearance of .crossDrv in derivation)
-    config = "l4-unknown-linux";
+    # FIXME: which of below attrs triggers cross-compilation?
     arch = "x86_64";
     libc = "glibc";
     gcc = {
-      arch = "x86_64";
+      arch = "x86-64";
     };
     platform = {
       kernelArch = "l4";
@@ -26,7 +27,9 @@ with import <nixpkgs> {
     };
     # FIXME: are below values ok? and do we really require them?
     withTLS = true;
-    openssl.system = "linux-generic32";
+    # FIXME(akavel): which of below is better? x86... is based on `<nixpkgs>.openssl.system`
+    #openssl.system = "linux-generic32";
+    openssl.system = "x86_64-linux";
   };
 };
 
