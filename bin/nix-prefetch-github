@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+if [ $# -ne 2 ]; then
+  echo 'USAGE:'
+  echo ' $ nix-prefetch-github OWNER/REPO REVISION'
+  exit 1
+fi
+
+OWNER=${1%%/*}
+REPO=${1##*/}
+HASH="$( nix-prefetch-url --unpack https://github.com/$OWNER/$REPO/archive/$2.tar.gz )"
+cat <<EOF
+{ fetchFromGitHub, ... }:
+fetchFromGitHub {
+  owner = "$OWNER"; repo = "$REPO"; rev = "$2";
+  sha256 = "$HASH";
+}
+EOF
+
